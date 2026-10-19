@@ -1,0 +1,12 @@
+const assert=require('node:assert/strict');const {test}=require('node:test');const fs=require('node:fs');const path=require('node:path');const e=require('../src/engine');const fixture=JSON.parse(fs.readFileSync(path.join(__dirname,'../data/opportunities.json'),'utf8'));
+test('fixture is synthetic and unique',()=>{assert.equal(fixture.length,12);assert.equal(new Set(fixture.map(r=>r.id)).size,fixture.length)});
+test('source data is not mutated by evaluation',()=>{const snapshot=JSON.stringify(fixture);e.analyze(fixture);assert.equal(JSON.stringify(fixture),snapshot)});
+test('only complete, approved and assigned handoffs are delivery-ready',()=>{assert.equal(e.analyze(fixture).metrics.ready,4);assert.equal(e.evaluate(fixture[0]).ready,true);assert.equal(e.evaluate(fixture[3]).ready,false)});
+test('missing account and invalid commercial value trigger completeness review',()=>{assert.ok(e.evaluate(fixture[2]).gaps.includes('account'));assert.ok(e.evaluate(fixture[8]).gaps.includes('estimatedValue'))});
+test('security review is never bypassed',()=>{let record={...fixture[0],securityReview:'pending'};let row=e.evaluate(record);assert.equal(row.ready,false);assert.equal(row.nextOwner,'Security')});
+test('technical review precedes commercial routing',()=>{let row=e.evaluate({...fixture[0],technicalScope:'unconfirmed',commercialApproval:'pending'});assert.equal(row.nextOwner,'Delivery Engineering')});
+test('missing delivery owner escalates to engineering program manager',()=>{const r=e.evaluate(fixture[3]);assert.equal(r.nextOwner,'Engineering Program Manager');assert.equal(r.ready,false)});
+test('strictly over SLA triggers alert but equality does not',()=>{assert.equal(e.evaluate({...fixture[0],daysInStage:5}).breached,false);assert.equal(e.evaluate({...fixture[0],daysInStage:6}).breached,true)});
+test('proposed events never execute changes',()=>{const event=e.simulatedNext(fixture[3]);assert.equal(event.executed,false);assert.equal(event.requiresHumanApproval,true)});
+test('empty pipeline does not divide by zero',()=>{assert.equal(e.analyze([]).metrics.avgDays,0)});
+test('stage totals reconcile with opportunity count',()=>{const m=e.analyze(fixture).metrics;assert.equal(m.stages.reduce((s,x)=>s+x.count,0),m.total)});
