@@ -21,3 +21,18 @@ Events are **proposals**, with `requiresHumanApproval: true` and `executed: fals
 
 ## Interpretation
 All observations, financial values, case names, responsibilities and SLA thresholds are fictional. This tool helps discuss possible workflows, not diagnose issues at Cohere.
+
+
+## Readiness, input validation and task definitions
+
+Readiness additionally requires stage Approved or Delivery Assigned; complete records in earlier stages route to Deal Desk for human stage reconciliation. It never moves a stage automatically.
+
+Text fields must be nonblank strings. Estimated value must be a finite positive number. Approval states are pending/approved/rejected; scope is confirmed/unconfirmed. Stage must be one of the four stages. Stage age must be a finite nonnegative number. Invalid inputs route first to GTM Operations. Unknown stages have no inferred SLA and are separately counted in the engine. Invalid ages are excluded from average stage age.
+
+Assignment due is a task for an otherwise approved, valid record at the delivery gate with an unassigned owner. It is not counted as an approval/input blocker. A record can be ready and over its stage-age threshold simultaneously: these measure different conditions. Average stage age is a snapshot, not cycle time or measured efficiency.
+
+The guided comparison uses an ephemeral copy. Hypothetical resolution assumes a valid brief, obtained approvals, confirmed scope, named owner, Approved stage and age zero. It does not alter the source, dashboard metrics or CSV. Events remain human-review proposals with executed:false.
+
+## Acceptance checks
+
+18 Node tests cover readiness stage gates, unsupported enums, invalid ages, input types, owner routing, task distinctions, SLA boundaries, fixture reconciliation and source preservation. The browser should show 12 opportunities, 4 ready, 6 blocked, 2 with invalid/missing fields and 7 over the illustrative SLA. Average stage age is 3.8 days. Filters affect only the queue and exported CSV.
