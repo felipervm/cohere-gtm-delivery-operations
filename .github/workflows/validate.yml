@@ -14,3 +14,4 @@ jobs:
       - run: node --test tests/test_engine.cjs
       - run: node --check src/engine.js
       - run: node --check src/app.js
+      - run: node --check src/gate-comparison.js
